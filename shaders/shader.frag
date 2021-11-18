@@ -10,4 +10,5 @@ uniform bool target;
 void main() {
 
   out_Color = texture(Texture, tex_Coord);
+  // out_Color = ex_Color;
 }

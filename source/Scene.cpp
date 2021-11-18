@@ -3,6 +3,7 @@
 #include "../headers/SOIL.h"
 #include <iostream>
 #include <iomanip>
+#include <unistd.h>
 
 Scene& Scene::getInstance() {
 
@@ -88,9 +89,30 @@ void Scene::setup() {
 
 	glClearColor(1.0f, 1.0f, 1.0f, 0.0f); // white background
 
+    std::vector < glm::vec2 > targetPoints = target.getPoints();
+
+    for(int i = 0; i < targetPoints.size(); ++i) {
+
+        int idx = (i + followerPointsCount) * vertexSize; // add 3 because the first 3 points in the vbo are follower points
+
+        vertices[idx] = targetPoints[i][0];
+        vertices[idx + 1] = targetPoints[i][1]; // coordinates
+        vertices[idx + 2] = 0.0f;
+        vertices[idx + 3] = 1.0f;
+
+        vertices[idx + 4] = 0.0f;
+        vertices[idx + 5] = 0.0f; // colors
+        vertices[idx + 6] = 0.0f;
+
+        vertices[idx + 7] = targetPoints[i][0] / windowWidth; // texture coordinates
+        vertices[idx + 8] = targetPoints[i][1] / windowHeight;
+    }
+
     createVBO();
     loadTexture();
     loadShaders();
+
+
 }
 
 void Scene::render() {
@@ -100,17 +122,35 @@ void Scene::render() {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
 
+    if(!follower.getLiveAnimation()){
+        follower.updateAnimation(target);
+    }
+
+    glm::mat4 followerTransformation = follower.getTransformation();
+    followerTransformation = normMatrix * followerTransformation;
+
+    // glm::vec4 o = rotMat * glm::vec4(100.0f, 100.0f, 0.0f, 1.0f);
+
+    // for(int i = 0; i < 4; ++i){
+    //     std::cout << std::fixed << std::setprecision(6) << o[i] << '\n';
+    // }
+
     GLuint normMatrixLoc = glGetUniformLocation(shadersId, "normMatrix");
-    glUniformMatrix4fv(normMatrixLoc, 1, GL_FALSE, &normMatrix[0][0]);
+    glUniformMatrix4fv(normMatrixLoc, 1, GL_FALSE, &followerTransformation[0][0]);
 
     glUniform1i(glGetUniformLocation(shadersId, "Texture"), 0);
 
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
-    glPointSize(20.0f);
-    glDrawArrays(GL_POINTS, 3, 4);
+    normMatrixLoc = glGetUniformLocation(shadersId, "normMatrix");
+    glUniformMatrix4fv(normMatrixLoc, 1, GL_FALSE, &normMatrix[0][0]);
 
+    // glPointSize(20.0f);
+    glDrawArrays(GL_POLYGON, 3, targetPointsCount);
+
+    // glPopMatrix();
     glutSwapBuffers();
+    glutPostRedisplay();
     glFlush();
 }
 

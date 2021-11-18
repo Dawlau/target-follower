@@ -6,6 +6,10 @@
 #include "glm/gtx/transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
+#include "Target.hpp"
+#include "Follower.hpp"
+#include "geometry.hpp"
+
 class Scene {
 
 private:
@@ -15,8 +19,14 @@ private:
 		normMatrix = glm::scale(glm::vec3(2.0f / windowWidth, 2.0f / windowHeight, 1.0f)) * glm::translate(glm::vec3(-windowWidth / 2.0f, -windowHeight / 2.0f, 0.0f));
 	}
 
-	static const int vertexSize = 10;
-	static const int vertexCount = 4;
+	Target target;
+	Follower follower;
+
+	static const int followerPointsCount = 3;
+	static const int targetPointsCount = 360;
+
+	static const int vertexSize = 9;
+	static const int vertexCount = followerPointsCount + targetPointsCount;
 
 	static const int initialWindowsPosX = 100;
 	static const int initialWindowsPosY = 100;
@@ -43,8 +53,10 @@ private:
 		100.0f, 100.0f, 0.0f, 1.0f, 	1.0f, 0.0f, 0.0f,		0.0f, 0.0f,
 		200.0f, 100.0f, 0.0f, 1.0f, 	1.0f, 0.0f, 0.0f,		1.0f, 0.0f, // follower
 		150.0f, 200.0f, 0.0f, 1.0f, 	1.0f, 0.0f, 0.0f,		0.5f, 1.0f,
-		500.0f, 500.0f, 0.0f, 1.0f,		0.0f, 0.0f, 0.0f,		0.0f, 0.0f, // target
+		// 500.0f, 500.0f, 0.0f, 1.0f,		0.0f, 0.0f, 0.0f,		0.0f, 0.0f, // target
 	};
+
+
 
 
 	void createVBO();
