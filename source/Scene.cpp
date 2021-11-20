@@ -58,25 +58,31 @@ void Scene::unloadShaders() {
 	glDeleteProgram(shadersId);
 }
 
-void Scene::loadTexture() {
-
+void Scene::loadTexture(const char *imagePath, GLuint &texture) {
+    std::cout << texture << ' ';
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
+    std::cout <<imagePath << ' ' << texture << '\n';
+    float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     int width, height;
-    unsigned char* image = SOIL_load_image("text_smiley_face.png", &width, &height, 0, SOIL_LOAD_RGB);
+    unsigned char* image = SOIL_load_image(imagePath, &width, &height, 0, SOIL_LOAD_RGB);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    if (image) {
 
-    SOIL_free_image_data(image);
-    glBindTexture(GL_TEXTURE_2D, 0);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+        glGenerateMipmap(GL_TEXTURE_2D);
 
+        SOIL_free_image_data(image);
+        glBindTexture(GL_TEXTURE_2D, texture);
+
+    }
+    else {
+        std::cout << "Error loading the texture\n";
+    }
 }
 
 void Scene::cleanup() {
@@ -87,11 +93,27 @@ void Scene::cleanup() {
 
 void Scene::setup() {
 
-	glClearColor(1.0f, 1.0f, 1.0f, 0.0f); // white background
+	glClearColor(1.0f, 1.0f, 0.0f, 0.0f); // white background
+    updateTargetCoordinates();
+    updateFollowerCoordinates();
+
+    loadTexture(targetTexturePath, targetTexture);
+    loadTexture(followerTexturePath, followerTexture);
+
+    loadShaders();
+
+}
+
+void Scene::updateTargetCoordinates() {
 
     std::vector < glm::vec2 > targetPoints = target.getPoints();
+    std::vector < glm::vec2 > textureCoordinates = target.getTextureCoordinates();
+
+    // std::cout << targetPoints.size() << '\n';
 
     for(int i = 0; i < targetPoints.size(); ++i) {
+
+        // std::cout << targetPoints[i][0] << ' ' << targetPoints[i][1] << '\n';
 
         int idx = (i + followerPointsCount) * vertexSize; // add 3 because the first 3 points in the vbo are follower points
 
@@ -104,51 +126,94 @@ void Scene::setup() {
         vertices[idx + 5] = 0.0f; // colors
         vertices[idx + 6] = 0.0f;
 
-        vertices[idx + 7] = targetPoints[i][0] / windowWidth; // texture coordinates
-        vertices[idx + 8] = targetPoints[i][1] / windowHeight;
+        vertices[idx + 7] = textureCoordinates[i][0]; // texture coordinates
+        vertices[idx + 8] = textureCoordinates[i][1];
     }
+}
 
-    createVBO();
-    loadTexture();
-    loadShaders();
+void Scene::updateFollowerCoordinates() {
 
+    std::vector < glm::vec4 > followerPoints = follower.getPoints();
 
+    for(int i = 0; i < followerPoints.size(); i++) {
+
+        int idx = i * vertexSize;
+
+        vertices[idx] = followerPoints[i][0];
+        vertices[idx + 1] = followerPoints[i][1];
+        vertices[idx + 2] = 0.0f;
+        vertices[idx + 3] = 1.0f;
+
+        vertices[idx + 4] = 0.0f;
+        vertices[idx + 5] = 0.0f;
+        vertices[idx + 6] = 0.0f;
+
+        if(i == 0){
+        vertices[idx + 7] = 0.0f;
+        vertices[idx + 8] = 1.0f;
+        }
+        else if(i == 1) {
+            vertices[idx + 7] = 0.0f;
+            vertices[idx + 8] = 0.0f;
+        }
+        else if(i == 2) {
+            vertices[idx + 7] = 1.0f;
+            vertices[idx + 8] = 0.5f;
+        }
+    }
 }
 
 void Scene::render() {
 
 	glClear(GL_COLOR_BUFFER_BIT);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    // std::cout << targetTexture << ' ' << followerTexture << '\n';
 
-    if(!follower.getLiveAnimation()){
+    createVBO();
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, targetTexture);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, followerTexture);
+
+    if (follower.detectCollision()) {
+        // usleep(15000000);
+        follower.updatePoints();
+        follower.reInitAnimation();
+        target.rePosition();
+        updateTargetCoordinates();
+        updateFollowerCoordinates();
+    }
+
+    if (!follower.getLiveAnimation()){
+
         follower.updateAnimation(target);
     }
+
+
 
     glm::mat4 followerTransformation = follower.getTransformation();
     followerTransformation = normMatrix * followerTransformation;
 
-    // glm::vec4 o = rotMat * glm::vec4(100.0f, 100.0f, 0.0f, 1.0f);
-
-    // for(int i = 0; i < 4; ++i){
-    //     std::cout << std::fixed << std::setprecision(6) << o[i] << '\n';
-    // }
-
+    // render follower
     GLuint normMatrixLoc = glGetUniformLocation(shadersId, "normMatrix");
     glUniformMatrix4fv(normMatrixLoc, 1, GL_FALSE, &followerTransformation[0][0]);
+    glUniform1i(glGetUniformLocation(shadersId, "target"), 0);
 
-    glUniform1i(glGetUniformLocation(shadersId, "Texture"), 0);
+    glUniform1i(glGetUniformLocation(shadersId, "Texture"), 1);
 
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
+    // render target
     normMatrixLoc = glGetUniformLocation(shadersId, "normMatrix");
     glUniformMatrix4fv(normMatrixLoc, 1, GL_FALSE, &normMatrix[0][0]);
+    glUniform1i(glGetUniformLocation(shadersId, "target"), 1);
 
-    // glPointSize(20.0f);
+    glUniform1i(glGetUniformLocation(shadersId, "Texture"), 0);
+
     glDrawArrays(GL_POLYGON, 3, targetPointsCount);
 
-    // glPopMatrix();
     glutSwapBuffers();
     glutPostRedisplay();
     glFlush();

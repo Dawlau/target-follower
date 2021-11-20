@@ -28,3 +28,12 @@ float angleBetweenVectors(glm::vec2 a, glm::vec2 b) {
 	float angle = acos(dotProduct / (lengthA * lengthB));
 	return angle;
 }
+
+float genRandom(const float low, const float high) {
+
+	std::random_device device;
+	std::mt19937 rng(device());
+	std::uniform_real_distribution<float> generator(low, high);
+
+	return generator(rng);
+}

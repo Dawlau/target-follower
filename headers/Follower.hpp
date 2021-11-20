@@ -1,3 +1,6 @@
+#ifndef FOLLOWER_H
+#define FOLLOWER_H
+
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtx/transform.hpp"
@@ -10,15 +13,16 @@ class Follower {
 
 	private:
 
-		static const std::vector< glm::vec4 > defaultCoordinates;
-		static constexpr float rotationAngleOffset = 0.0005f;
-		static constexpr float translationOffset = 0.0005f;
+		static constexpr float rotationAngleOffset = 0.002f;
+		static constexpr float translationOffset = 0.002f;
+		static constexpr float collisionDistance = 0.1f;
+
+		std::vector< glm::vec4 > points;
+		glm::vec2 closestTargetPoint;
 
 		float rotation;
 		float xTranslation;
 		float yTranslation;
-
-		// bool animation;
 
 		float liveRotation;
 		float livexTranslation;
@@ -26,11 +30,19 @@ class Follower {
 
 	public:
 
-		std::vector < glm::vec4 > getPoints();
+		Follower();
+
 		glm::vec3 getCentroid();
 		glm::mat4 getTransformation();
 
 		bool getLiveAnimation();
 		void updateAnimation(const Target &);
 
+		bool detectCollision();
+		void reInitAnimation();
+
+		void updatePoints();
+		std::vector < glm::vec4 > getPoints();
 };
+
+#endif

@@ -1,19 +1,48 @@
 #include "../headers/Follower.hpp"
 #include <iostream>
 #include <iomanip>
+#include <unistd.h>
 
-const std::vector < glm::vec4 > Follower::defaultCoordinates = {
+Follower::Follower() {
 
-	glm::vec4(100.0f, 100.0f, 0.0f, 1.0f),
-	glm::vec4(200.0f, 100.0f, 0.0f, 1.0f),
-	glm::vec4(150.0f, 200.0f, 0.0f, 1.0f),
-};
+	points = {
+		glm::vec4(100.0f, 100.0f, 0.0f, 1.0f),
+		glm::vec4(200.0f, 100.0f, 0.0f, 1.0f),
+		glm::vec4(150.0f, 200.0f, 0.0f, 1.0f)
+	};
+}
+
+void Follower::updatePoints() {
+
+	// std::cout << xTranslation << ' ' << yTranslation << '\n';
+
+	glm::vec3 centroid = getCentroid();
+	// std::cout << rotation << '\n';
+	// usleep(15000000);
+
+	// glm::mat4 transformation = getTransformation();
+	glm::mat4 transformation =  glm::translate(glm::vec3(xTranslation, yTranslation, 0.0f)) *
+								glm::translate(centroid) *
+								glm::rotate(rotation, glm::vec3(0.0f, 0.0f, 1.0f)) *
+								glm::translate(-centroid);
+
+
+	for(int i = 0; i < points.size(); i++) {
+
+		points[i] = transformation * points[i];
+	}
+}
+
+std::vector < glm::vec4 > Follower::getPoints() {
+
+	return points;
+}
 
 glm::vec3 Follower::getCentroid() {
 
 	glm::vec4 centroid = glm::vec4(0.0f);
 
-	for(const glm::vec4 &point : defaultCoordinates) {
+	for(const glm::vec4 &point : points) {
 
 		centroid += point;
 	}
@@ -29,14 +58,11 @@ glm::mat4 Follower::getTransformation() {
 								glm::translate(centroid) *
 								glm::rotate(rotation, glm::vec3(0.0f, 0.0f, 1.0f)) *
 								glm::translate(-centroid);
-;
+	// std::cout << rotation << '\n';
 
 	if(liveRotation) {
 
 		glm::mat4 rotationMatrix;
-
-		// rotation += rotationAngleOffset;
-
 
 		if(fabs(liveRotation) < rotationAngleOffset) {
 
@@ -64,37 +90,14 @@ glm::mat4 Follower::getTransformation() {
 							glm::translate(-centroid);
 	}
 	else if(livexTranslation or liveyTranslation) {
-		std::cout << "in\n";
-		transformation = glm::translate(glm::vec3(livexTranslation, liveyTranslation, 0.0f)) * transformation;
+
 		xTranslation += livexTranslation;
 		yTranslation += liveyTranslation;
 	}
 
-
-
-
-
-	// glm::mat4 transformation = glm::translate(glm::vec3(xTranslation, yTranslation, 0.0f)) *
-	// 						   glm::translate(centroid) *
-	// 						   glm::rotate(rotation, glm::vec3(0.0f, 0.0f, 1.0f)) *
-	// 						   glm::translate(-centroid);
-
 	return transformation;
 }
 
-std::vector < glm::vec4 > Follower::getPoints() {
-
-	std::vector < glm::vec4 > points;
-	points.reserve(defaultCoordinates.size());
-
-	for(int i = 0; i < defaultCoordinates.size(); ++i) {
-
-		glm::vec4 point = defaultCoordinates[i];
-		points.push_back(getTransformation() * point);
-	}
-
-	return points;
-}
 
 bool Follower::getLiveAnimation() {
 
@@ -110,13 +113,13 @@ void Follower::updateAnimation(const Target& target) {
 							   glm::translate(centroid) *
 							   glm::rotate(rotation, glm::vec3(0.0f, 0.0f, 1.0f)) *
 							   glm::translate(-centroid) *
-							   defaultCoordinates[defaultCoordinates.size() - 1]; // C
+							   points[points.size() - 1]; // C
 
 	glm::vec2 projectionPoint = glm::translate(glm::vec3(xTranslation, yTranslation, 0.0f)) *
 							  	glm::translate(centroid) *
 								glm::rotate(rotation, glm::vec3(0.0f, 0.0f, 1.0f)) *
 							   	glm::translate(-centroid) *
-							   	((defaultCoordinates[0] + defaultCoordinates[1]) / 2.0f); // D
+							   	((points[0] + points[1]) / 2.0f); // D
 
 	glm::vec2 closestPoint = targetPoints[0];
 	for(int i = 1; i < targetPoints.size(); i++) {
@@ -124,6 +127,10 @@ void Follower::updateAnimation(const Target& target) {
 			closestPoint = targetPoints[i]; // X
 		}
 	}
+
+	// glm::vec2 closestPoint = target.getCenter();
+
+	closestTargetPoint = target.getCenter();
 
 	// update rotation
 
@@ -136,7 +143,6 @@ void Follower::updateAnimation(const Target& target) {
 		liveRotation = -liveRotation;
 	}
 
-
 	// update translation
 
 	glm::vec2 newPeak = glm::translate(glm::vec3(xTranslation, yTranslation, 0.0f)) *
@@ -144,12 +150,32 @@ void Follower::updateAnimation(const Target& target) {
 						glm::rotate(liveRotation, glm::vec3(0.0f, 0.0f, 1.0f)) *
 			  			glm::rotate(rotation, glm::vec3(0.0f, 0.0f, 1.0f)) *
 			  			glm::translate(-centroid) *
-						defaultCoordinates[defaultCoordinates.size() - 1];
+						points[points.size() - 1];
 
 	glm::vec2 translationVector = translationOffset * (closestPoint - newPeak);
 
 	livexTranslation = translationVector[0];
 	liveyTranslation = translationVector[1];
 
-	std::cout << livexTranslation << ' ' << liveyTranslation << '\n';
+}
+
+bool Follower::detectCollision() {
+
+	glm::vec3 centroid = getCentroid();
+
+	glm::vec2 peak = glm::translate(glm::vec3(xTranslation, yTranslation, 0.0f)) *
+					 glm::translate(centroid) *
+					 glm::rotate(rotation, glm::vec3(0.0f, 0.0f, 1.0f)) *
+					 glm::translate(-centroid) *
+					 points[points.size() - 1];
+
+
+	return (glm::distance(peak, closestTargetPoint) <= collisionDistance);
+}
+
+void Follower::reInitAnimation() {
+
+	liveRotation = livexTranslation = liveyTranslation = 0;
+	xTranslation = yTranslation = 0;
+	rotation = 0;
 }

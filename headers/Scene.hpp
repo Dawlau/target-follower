@@ -45,18 +45,13 @@ private:
 	GLuint vaoId;
 	GLuint vboId;
 	GLuint shadersId;
-	GLuint texture;
+	GLuint targetTexture;
+	GLuint followerTexture;
 
-	GLfloat vertices[vertexSize * vertexCount] = {
+	GLfloat vertices[vertexSize * vertexCount];
 
-		// coords						// colors					// texture coords
-		100.0f, 100.0f, 0.0f, 1.0f, 	1.0f, 0.0f, 0.0f,		0.0f, 0.0f,
-		200.0f, 100.0f, 0.0f, 1.0f, 	1.0f, 0.0f, 0.0f,		1.0f, 0.0f, // follower
-		150.0f, 200.0f, 0.0f, 1.0f, 	1.0f, 0.0f, 0.0f,		0.5f, 1.0f,
-		// 500.0f, 500.0f, 0.0f, 1.0f,		0.0f, 0.0f, 0.0f,		0.0f, 0.0f, // target
-	};
-
-
+	const char* targetTexturePath = "Target.png";
+	const char* followerTexturePath = "Arrow.png";
 
 
 	void createVBO();
@@ -65,7 +60,10 @@ private:
 	void loadShaders();
 	void unloadShaders();
 
-	void loadTexture();
+	void loadTexture(const char*, GLuint&);
+
+	void updateTargetCoordinates();
+	void updateFollowerCoordinates();
 
 public:
 

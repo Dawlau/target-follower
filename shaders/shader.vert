@@ -6,12 +6,20 @@ layout(location=2) in vec2 texCoord;
 
 out vec4 ex_Color;
 out vec2 tex_Coord;
+
 uniform mat4 normMatrix;
+uniform int target;
+
 
 
 void main() {
 
   gl_Position = normMatrix * in_Position;
   ex_Color = in_Color;
-  tex_Coord = texCoord; //vec2(texCoord.x, 1 - texCoord.y);
+
+  if (target == 1) {
+    tex_Coord = vec2(-0.1f + texCoord.x, texCoord.y);
+  } else {
+    tex_Coord = vec2(texCoord.x, texCoord.y);
+  }
 }

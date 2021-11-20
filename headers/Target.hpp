@@ -9,11 +9,14 @@
 #include "glm/gtx/transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
+#include <random>
+
 class Target {
 
 	private:
 
 		std::vector < glm::vec2 > points;
+		std::vector < glm::vec2 > textureCoordinates;
 		float ray;
 		glm::vec2 center;
 
@@ -25,7 +28,7 @@ class Target {
 		static const int windowWidth = 800;
 		static const int windowHeight = 600;
 
-
+		void generateTextureCoordinates();
 
 	public:
 
@@ -33,6 +36,10 @@ class Target {
 
 		std::vector <glm::vec2> getPoints() const;
 		void rePosition();
+		void generatePoints();
+
+		glm::vec2 getCenter() const;
+		std::vector < glm::vec2 > getTextureCoordinates() const;
 };
 
 #endif
