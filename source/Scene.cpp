@@ -59,10 +59,10 @@ void Scene::unloadShaders() {
 }
 
 void Scene::loadTexture(const char *imagePath, GLuint &texture) {
-    std::cout << texture << ' ';
+
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    std::cout <<imagePath << ' ' << texture << '\n';
+
     float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
@@ -213,6 +213,8 @@ void Scene::render() {
     glUniform1i(glGetUniformLocation(shadersId, "Texture"), 0);
 
     glDrawArrays(GL_POLYGON, 3, targetPointsCount);
+
+    destroyVBO();
 
     glutSwapBuffers();
     glutPostRedisplay();
