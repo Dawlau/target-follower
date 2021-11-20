@@ -38,6 +38,7 @@ class Target {
 		void rePosition();
 		void generatePoints();
 
+		float getRay() const;
 		glm::vec2 getCenter() const;
 		std::vector < glm::vec2 > getTextureCoordinates() const;
 };

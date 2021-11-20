@@ -14,13 +14,8 @@ Follower::Follower() {
 
 void Follower::updatePoints() {
 
-	// std::cout << xTranslation << ' ' << yTranslation << '\n';
-
 	glm::vec3 centroid = getCentroid();
-	// std::cout << rotation << '\n';
-	// usleep(15000000);
 
-	// glm::mat4 transformation = getTransformation();
 	glm::mat4 transformation =  glm::translate(glm::vec3(xTranslation, yTranslation, 0.0f)) *
 								glm::translate(centroid) *
 								glm::rotate(rotation, glm::vec3(0.0f, 0.0f, 1.0f)) *
@@ -58,7 +53,6 @@ glm::mat4 Follower::getTransformation() {
 								glm::translate(centroid) *
 								glm::rotate(rotation, glm::vec3(0.0f, 0.0f, 1.0f)) *
 								glm::translate(-centroid);
-	// std::cout << rotation << '\n';
 
 	if(liveRotation) {
 
@@ -108,58 +102,40 @@ void Follower::updateAnimation(const Target& target) {
 
 	std::vector < glm::vec2 > targetPoints = target.getPoints();
 
-	glm::vec3 centroid = getCentroid();
-	glm::vec2 referencePoint = glm::translate(glm::vec3(xTranslation, yTranslation, 0.0f)) *
-							   glm::translate(centroid) *
-							   glm::rotate(rotation, glm::vec3(0.0f, 0.0f, 1.0f)) *
-							   glm::translate(-centroid) *
-							   points[points.size() - 1]; // C
+	glm::vec2 G = getCentroid(); // G
 
-	glm::vec2 projectionPoint = glm::translate(glm::vec3(xTranslation, yTranslation, 0.0f)) *
-							  	glm::translate(centroid) *
-								glm::rotate(rotation, glm::vec3(0.0f, 0.0f, 1.0f)) *
-							   	glm::translate(-centroid) *
-							   	((points[0] + points[1]) / 2.0f); // D
+	glm::vec2 referencePoint = points[points.size() - 1]; // C
 
-	glm::vec2 closestPoint = targetPoints[0];
-	for(int i = 1; i < targetPoints.size(); i++) {
-		if(glm::distance(referencePoint, closestPoint) > glm::distance(referencePoint, targetPoints[i])) {
-			closestPoint = targetPoints[i]; // X
-		}
-	}
-
-	// glm::vec2 closestPoint = target.getCenter();
-
-	closestTargetPoint = target.getCenter();
+	glm::vec2 center = target.getCenter(); // X
 
 	// update rotation
 
-	glm::vec2 CD = projectionPoint - referencePoint;
-	glm::vec2 CX = closestPoint - referencePoint;
+	glm::vec2 GC = referencePoint - G;
+	glm::vec2 GX = center - G;
 
-	liveRotation = PI - angleBetweenVectors(CD, CX);
+	liveRotation = angleBetweenVectors(GX, GC);
 
-	if(orientationTest(CD, CX) > 0) {
+	if(orientationTest(GC, GX) < 0) {
 		liveRotation = -liveRotation;
 	}
 
 	// update translation
 
-	glm::vec2 newPeak = glm::translate(glm::vec3(xTranslation, yTranslation, 0.0f)) *
-			  			glm::translate(centroid) *
+	glm::vec3 centroid = getCentroid();
+
+	glm::vec2 newPeak =	glm::translate(centroid) *
 						glm::rotate(liveRotation, glm::vec3(0.0f, 0.0f, 1.0f)) *
-			  			glm::rotate(rotation, glm::vec3(0.0f, 0.0f, 1.0f)) *
-			  			glm::translate(-centroid) *
+						glm::translate(-centroid) *
 						points[points.size() - 1];
 
-	glm::vec2 translationVector = translationOffset * (closestPoint - newPeak);
+	glm::vec2 translationVector = translationOffset * (center - newPeak);
 
 	livexTranslation = translationVector[0];
 	liveyTranslation = translationVector[1];
 
 }
 
-bool Follower::detectCollision() {
+bool Follower::detectCollision(const Target &target) {
 
 	glm::vec3 centroid = getCentroid();
 
@@ -169,8 +145,16 @@ bool Follower::detectCollision() {
 					 glm::translate(-centroid) *
 					 points[points.size() - 1];
 
+	glm::vec2 targetCenter = target.getCenter();
+	float targetRay = target.getRay();
 
-	return (glm::distance(peak, closestTargetPoint) <= collisionDistance);
+	float x = peak[0];
+	float y = peak[1];
+
+	float cx = targetCenter[0];
+	float cy = targetCenter[1];
+
+	return ((x - cx) * (x - cx) + (y - cy) * (y - cy) < targetRay * targetRay);
 }
 
 void Follower::reInitAnimation() {

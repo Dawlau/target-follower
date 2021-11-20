@@ -177,8 +177,8 @@ void Scene::render() {
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, followerTexture);
 
-    if (follower.detectCollision()) {
-        // usleep(15000000);
+    if (follower.detectCollision(target)) {
+
         follower.updatePoints();
         follower.reInitAnimation();
         target.rePosition();

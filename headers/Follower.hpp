@@ -18,7 +18,6 @@ class Follower {
 		static constexpr float collisionDistance = 0.1f;
 
 		std::vector< glm::vec4 > points;
-		glm::vec2 closestTargetPoint;
 
 		float rotation;
 		float xTranslation;
@@ -38,7 +37,7 @@ class Follower {
 		bool getLiveAnimation();
 		void updateAnimation(const Target &);
 
-		bool detectCollision();
+		bool detectCollision(const Target &);
 		void reInitAnimation();
 
 		void updatePoints();

@@ -30,6 +30,10 @@ void Target::generateTextureCoordinates() {
 	// textureCoordinates.push_back(glm::vec2(0.0f, 1.0f));
 }
 
+float Target::getRay() const {
+	return ray;
+}
+
 std::vector < glm::vec2 > Target::getTextureCoordinates() const {
 
 	return textureCoordinates;
