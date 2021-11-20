@@ -13,8 +13,8 @@ class Follower {
 
 	private:
 
-		static constexpr float rotationAngleOffset = 0.002f;
-		static constexpr float translationOffset = 0.002f;
+		static constexpr float rotationAngleOffset = 0.0005f;
+		static constexpr float translationOffset = 0.0005f;
 		static constexpr float collisionDistance = 0.1f;
 
 		std::vector< glm::vec4 > points;
